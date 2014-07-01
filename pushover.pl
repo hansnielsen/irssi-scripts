@@ -127,6 +127,16 @@ sub pushover_validate {
     }
 }
 
+Irssi::command_bind("help", sub {
+    if ($_[0] eq "pushover validate") {
+        Irssi::print("", Irssi::MSGLEVEL_CLIENTCRAP);
+        Irssi::print("PUSHOVER VALIDATE", Irssi::MSGLEVEL_CLIENTCRAP);
+        Irssi::print("", Irssi::MSGLEVEL_CLIENTCRAP);
+        Irssi::print("Tests the app API key, user ID, and user device against the Pushover server to make sure it is configured properly.", Irssi::MSGLEVEL_CLIENTCRAP);
+        Irssi::signal_stop();
+    }
+});
+
 sub pushover_on {
     Irssi::print("Pushover enabled") unless pushover_enabled;
     Irssi::settings_set_bool("pushover", 1);
