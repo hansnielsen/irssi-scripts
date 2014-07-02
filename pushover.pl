@@ -98,19 +98,27 @@ sub send_pushover_notification {
 #########################################################
 
 sub signal_print_text {
-    return unless pushover_enabled;
     my ($dest, $newstr, $stripped) = @_;
 
+    # if we're not connected to a server, we can't be hilighted
+    my $server = $dest->{"server"};
+    return unless defined $server;
+
+    return unless pushover_enabled;
+    return if defined $proxies{$server->{"chatnet"}};
+
     if ($dest->{'level'} & Irssi::MSGLEVEL_HILIGHT) {
-	send_pushover_notification("Hilighted in $dest->{'target'}", $stripped);
+        send_pushover_notification("Hilighted in $server->{'chatnet'}/$dest->{'target'}", $stripped);
     }
 }
 
 sub signal_message_private {
-    return unless pushover_enabled;
     my ($server, $msg, $nick, $address) = @_;
 
-    send_pushover_notification("PM from $nick", "$nick on $server->{'tag'} said '$msg'");
+    return unless pushover_enabled;
+    return if defined $proxies{$server->{"chatnet"}};
+
+    send_pushover_notification("PM from $nick", "$nick on $server->{'chatnet'} said '$msg'");
 }
 
 sub signal_proxy_client_connected {
