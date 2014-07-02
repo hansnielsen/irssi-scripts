@@ -25,9 +25,14 @@ Irssi::command_bind("pushover",          \&subcmd_handler,    "Pushover");
 Irssi::signal_add("print text",      \&signal_print_text);
 Irssi::signal_add("message private", \&signal_message_private);
 
+Irssi::signal_add("proxy client connected",    \&signal_proxy_client_connected);
+Irssi::signal_add("proxy client disconnected", \&signal_proxy_client_disconnected);
+
 #########################################################
 # VARIOUS UTILITY THINGS
 #########################################################
+my %proxies = ();
+
 sub pushover_enabled {
     return Irssi::settings_get_bool("pushover");
 }
@@ -106,6 +111,31 @@ sub signal_message_private {
     my ($server, $msg, $nick, $address) = @_;
 
     send_pushover_notification("PM from $nick", "$nick on $server->{'tag'} said '$msg'");
+}
+
+sub signal_proxy_client_connected {
+    my ($client) = @_;
+
+    my $ircnet = $client->{"ircnet"};
+    if (defined $proxies{$ircnet}) {
+        $proxies{$ircnet}++;
+    } else {
+        $proxies{$ircnet} = 1;
+    }
+}
+
+sub signal_proxy_client_disconnected {
+    my ($client) = @_;
+
+    my $ircnet = $client->{"ircnet"};
+    if (defined $proxies{$ircnet}) {
+        $proxies{$ircnet}--;
+        if ($proxies{$ircnet} == 0) {
+            delete $proxies{$ircnet};
+        }
+    } else {
+        Irssi::print("WARNING: Proxy disconnect for an unknown ircnet?!");
+    }
 }
 
 #########################################################
