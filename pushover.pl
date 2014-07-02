@@ -176,6 +176,12 @@ Irssi::command_bind("help", sub {
 });
 
 sub pushover_on {
+    my $ret = check_pushover_validity();
+    if (!$ret) {
+        Irssi::print("WARNING: Pushover settings didn't validate, disabling notifications");
+        return;
+    }
+
     Irssi::print("Pushover enabled") unless pushover_enabled;
     Irssi::settings_set_bool("pushover", 1);
 }
