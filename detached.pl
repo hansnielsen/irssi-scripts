@@ -24,7 +24,7 @@ Irssi::signal_add("setup changed", \&signal_setup_changed);
 
 my $timeout;
 my $detacher_check;
-my $state = 0;
+my $state = 0; # default is detached
 
 #########################################################
 # THE THING WHICH IS RESPONSIBLE FOR IT ALL
@@ -168,6 +168,9 @@ sub detached_timeout {
 
 sub UNLOAD {
     stop_timeout();
+
+    # emit this to make sure scripts relying on this aren't left hanging
+    Irssi::signal_emit("detacher detached");
 }
 
 #########################################################
