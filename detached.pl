@@ -43,7 +43,7 @@ sub determine_detacher {
     } elsif ($type eq "tmux") {
         return setup_tmux();
     } elsif ($type eq "dtach") {
-        return \&check_dtach;
+        return setup_dtach();
     } elsif ($type eq "" || $type eq "auto") {
         return auto_detacher_finder();
     }
@@ -58,6 +58,10 @@ sub auto_detacher_finder {
     } elsif (defined $ENV{"TMUX"}) {
         return setup_tmux();
     }
+
+    # because dtach doesn't mess with the environment, just try it
+    my $ret = setup_dtach();
+    return $ret if defined $ret;
 
     return undef;
 }
@@ -94,6 +98,10 @@ sub setup_tmux {
 sub check_tmux {
     my $s = stat $internal{"tmux_socket"};
     return ($s->mode & S_IXUSR) != 0;
+}
+
+sub setup_dtach {
+    return undef;
 }
 
 sub check_dtach {
