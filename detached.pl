@@ -43,7 +43,7 @@ sub determine_detacher {
     } elsif ($type eq "tmux") {
         return setup_tmux();
     } elsif ($type eq "dtach") {
-        return setup_dtach();
+        return setup_dtach(1);
     } elsif ($type eq "" || $type eq "auto") {
         return auto_detacher_finder();
     }
@@ -96,11 +96,34 @@ sub setup_tmux {
 }
 
 sub setup_dtach {
+    my ($warn) = @_;
+
+    my $pid = $$;
+    my $ret;
+    do {
+        my $processname = `lsof -F c -U -a -p $pid`;
+        if ($processname =~ /^cdtach$/m) {
+            $internal{"dtach_pid"} = $pid;
+            return \&check_dtach;
+        }
+
+        $ret = `lsof -F R -p $pid` =~ /^R(?<pid>.+)$/m;
+        $pid = $+{pid};
+    } while ($ret);
+
+    Irssi::print("WARNING: Couldn't get PID of dtach process") if $warn;
     return undef;
 }
 
 sub check_dtach {
-    return 0;
+    my $sockets = `lsof -F n -U -a -p $internal{"dtach_pid"}`;
+
+    my $count = 0;
+    while ($sockets =~ /^n.+$/gm) {
+        $count++;
+    }
+
+    return $count > 1;
 }
 
 #########################################################
