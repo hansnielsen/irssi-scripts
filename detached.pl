@@ -25,7 +25,6 @@ Irssi::signal_add("setup changed", \&signal_setup_changed);
 my $timeout;
 my $detacher_check;
 my $state = 0;
-my %internal = ();
 
 #########################################################
 # THE THING WHICH IS RESPONSIBLE FOR IT ALL
@@ -67,7 +66,9 @@ sub auto_detacher_finder {
 }
 
 sub check_exec_socket {
-    my $s = stat $internal{"exec_socket"};
+    my ($socket) = @_;
+
+    my $s = stat $socket;
     return ($s->mode & S_IXUSR) != 0;
 }
 
@@ -79,9 +80,7 @@ sub setup_screen {
         Irssi::print("WARNING: Screen socket doesn't exist or isn't a socket!");
         return undef;
     }
-    $internal{"exec_socket"} = $socketpath;
-
-    return \&check_exec_socket;
+    return curry(\&check_exec_socket, $socketpath);
 }
 
 sub setup_tmux {
@@ -90,9 +89,7 @@ sub setup_tmux {
         Irssi::print("WARNING: tmux socket doesn't exist or isn't a socket!");
         return undef;
     }
-    $internal{"exec_socket"} = $socketpath;
-
-    return \&check_exec_socket;
+    return curry(\&check_exec_socket, $socketpath);
 }
 
 sub setup_dtach {
@@ -103,8 +100,7 @@ sub setup_dtach {
     do {
         my $processname = `lsof -F c -U -a -p $pid`;
         if ($processname =~ /^cdtach$/m) {
-            $internal{"dtach_pid"} = $pid;
-            return \&check_dtach;
+            return curry(\&check_dtach, $pid);
         }
 
         $ret = `lsof -F R -p $pid` =~ /^R(?<pid>.+)$/m;
@@ -116,7 +112,9 @@ sub setup_dtach {
 }
 
 sub check_dtach {
-    my $sockets = `lsof -F n -U -a -p $internal{"dtach_pid"}`;
+    my ($dtach_pid) = @_;
+
+    my $sockets = `lsof -F n -U -a -p $dtach_pid`;
 
     my $count = 0;
     while ($sockets =~ /^n.+$/gm) {
@@ -129,6 +127,14 @@ sub check_dtach {
 #########################################################
 # VARIOUS UTILITY THINGS
 #########################################################
+sub curry {
+    my $f = shift;
+    my $args = \@_;
+    sub {
+        $f->(@$args, @_);
+    }
+}
+
 sub stop_timeout {
     Irssi::timeout_remove($timeout);
     $timeout = undef;
