@@ -1,6 +1,10 @@
 use strict;
 use vars qw($VERSION %IRSSI);
 
+use File::Spec::Functions qw(catfile);
+use File::stat;
+use Fcntl ":mode";
+
 use Irssi;
 $VERSION = '0.01';
 %IRSSI = (
@@ -21,6 +25,7 @@ Irssi::signal_add("setup changed", \&signal_setup_changed);
 my $timeout;
 my $detacher_check;
 my $state = 0;
+my %internal = ();
 
 #########################################################
 # THE THING WHICH IS RESPONSIBLE FOR IT ALL
@@ -34,7 +39,7 @@ sub determine_detacher {
     my $type = (Irssi::settings_get_str("detached_type"));
 
     if ($type eq "screen") {
-        return \&check_screen;
+        return setup_screen();
     } elsif ($type eq "tmux") {
         return \&check_tmux;
     } elsif ($type eq "dtach") {
@@ -48,11 +53,29 @@ sub determine_detacher {
 }
 
 sub auto_detacher_finder {
+    if (defined $ENV{"STY"}) {
+        return setup_screen();
+    }
+
     return undef;
 }
 
+sub setup_screen {
+    # gross, but only consistent way to get sockdir
+    `screen -ls` =~ /^\d+ Sockets? in (\S+)\.$/m;
+    my $socketpath = catfile($1, $ENV{"STY"});
+    if (! -x $socketpath) {
+        Irssi::print("WARNING: Screen socket doesn't exist!");
+        return undef;
+    }
+    $internal{"screen_socket"} = $socketpath;
+
+    return \&check_screen;
+}
+
 sub check_screen {
-  return 0;
+    my $s = stat $internal{"screen_socket"};
+    return ($s->mode & S_IXUSR) != 0;
 }
 
 sub check_tmux {
