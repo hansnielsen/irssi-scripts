@@ -27,11 +27,14 @@ Irssi::signal_add("message private", \&signal_message_private);
 
 Irssi::signal_add("proxy client connected",    \&signal_proxy_client_connected);
 Irssi::signal_add("proxy client disconnected", \&signal_proxy_client_disconnected);
+Irssi::signal_add("detacher attached",         \&signal_detacher_attached);
+Irssi::signal_add("detacher detached",         \&signal_detacher_detached);
 
 #########################################################
 # VARIOUS UTILITY THINGS
 #########################################################
 my %proxies = ();
+my $detached = 1;
 
 sub pushover_enabled {
     return Irssi::settings_get_bool("pushover");
@@ -105,6 +108,7 @@ sub signal_print_text {
     return unless defined $server;
 
     return unless pushover_enabled;
+    return unless $detached;
     return if defined $proxies{$server->{"chatnet"}};
 
     if ($dest->{'level'} & Irssi::MSGLEVEL_HILIGHT) {
@@ -116,6 +120,7 @@ sub signal_message_private {
     my ($server, $msg, $nick, $address) = @_;
 
     return unless pushover_enabled;
+    return unless $detached;
     return if defined $proxies{$server->{"chatnet"}};
 
     send_pushover_notification("PM from $nick", "$nick on $server->{'chatnet'} said '$msg'");
@@ -144,6 +149,14 @@ sub signal_proxy_client_disconnected {
     } else {
         Irssi::print("WARNING: Proxy disconnect for an unknown ircnet?!");
     }
+}
+
+sub signal_detacher_attached {
+    $detached = 0;
+}
+
+sub signal_detacher_detached {
+    $detached = 1;
 }
 
 #########################################################
