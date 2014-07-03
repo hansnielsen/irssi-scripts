@@ -66,8 +66,8 @@ sub setup_screen {
     # gross, but only consistent way to get sockdir
     `screen -ls` =~ /^\d+ Sockets? in (\S+)\.$/m;
     my $socketpath = catfile($1, $ENV{"STY"});
-    if (! -x $socketpath) {
-        Irssi::print("WARNING: Screen socket doesn't exist!");
+    if (! -S $socketpath) {
+        Irssi::print("WARNING: Screen socket doesn't exist or isn't a socket!");
         return undef;
     }
     $internal{"screen_socket"} = $socketpath;
@@ -82,8 +82,8 @@ sub check_screen {
 
 sub setup_tmux {
     my ($socketpath, ) = split ",", $ENV{"TMUX"};
-    if (! -x $socketpath) {
-        Irssi::print("WARNING: tmux socket doesn't exist!");
+    if (! -S $socketpath) {
+        Irssi::print("WARNING: tmux socket doesn't exist or isn't a socket!");
         return undef;
     }
     $internal{"tmux_socket"} = $socketpath;
