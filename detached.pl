@@ -41,7 +41,7 @@ sub determine_detacher {
     if ($type eq "screen") {
         return setup_screen();
     } elsif ($type eq "tmux") {
-        return \&check_tmux;
+        return setup_tmux();
     } elsif ($type eq "dtach") {
         return \&check_dtach;
     } elsif ($type eq "" || $type eq "auto") {
@@ -55,6 +55,8 @@ sub determine_detacher {
 sub auto_detacher_finder {
     if (defined $ENV{"STY"}) {
         return setup_screen();
+    } elsif (defined $ENV{"TMUX"}) {
+        return setup_tmux();
     }
 
     return undef;
@@ -78,8 +80,20 @@ sub check_screen {
     return ($s->mode & S_IXUSR) != 0;
 }
 
+sub setup_tmux {
+    my ($socketpath, ) = split ",", $ENV{"TMUX"};
+    if (! -x $socketpath) {
+        Irssi::print("WARNING: tmux socket doesn't exist!");
+        return undef;
+    }
+    $internal{"tmux_socket"} = $socketpath;
+
+    return \&check_tmux;
+}
+
 sub check_tmux {
-    return 0;
+    my $s = stat $internal{"tmux_socket"};
+    return ($s->mode & S_IXUSR) != 0;
 }
 
 sub check_dtach {
