@@ -66,22 +66,22 @@ sub auto_detacher_finder {
     return undef;
 }
 
+sub check_exec_socket {
+    my $s = stat $internal{"exec_socket"};
+    return ($s->mode & S_IXUSR) != 0;
+}
+
 sub setup_screen {
     # gross, but only consistent way to get sockdir
     `screen -ls` =~ /^\d+ Sockets? in (\S+)\.$/m;
     my $socketpath = catfile($1, $ENV{"STY"});
-    if (! -S $socketpath) {
+    if (! -p $socketpath) {
         Irssi::print("WARNING: Screen socket doesn't exist or isn't a socket!");
         return undef;
     }
-    $internal{"screen_socket"} = $socketpath;
+    $internal{"exec_socket"} = $socketpath;
 
-    return \&check_screen;
-}
-
-sub check_screen {
-    my $s = stat $internal{"screen_socket"};
-    return ($s->mode & S_IXUSR) != 0;
+    return \&check_exec_socket;
 }
 
 sub setup_tmux {
@@ -90,14 +90,9 @@ sub setup_tmux {
         Irssi::print("WARNING: tmux socket doesn't exist or isn't a socket!");
         return undef;
     }
-    $internal{"tmux_socket"} = $socketpath;
+    $internal{"exec_socket"} = $socketpath;
 
-    return \&check_tmux;
-}
-
-sub check_tmux {
-    my $s = stat $internal{"tmux_socket"};
-    return ($s->mode & S_IXUSR) != 0;
+    return \&check_exec_socket;
 }
 
 sub setup_dtach {
