@@ -79,11 +79,11 @@ sub check_screen {
 }
 
 sub check_tmux {
-  return 0;
+    return 0;
 }
 
 sub check_dtach {
-  return 0;
+    return 0;
 }
 
 #########################################################
