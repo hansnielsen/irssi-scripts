@@ -15,8 +15,8 @@ $VERSION = '0.01';
     license     => 'Simplified BSD',
 );
 
-Irssi::settings_add_int("misc", "detached_check_interval", 5);
-Irssi::settings_add_str("misc", "detached_type", "");
+Irssi::settings_add_int("misc", "detacher_check_interval", 5);
+Irssi::settings_add_str("misc", "detacher_type", "");
 
 Irssi::signal_register({"detacher attached" => [], "detacher detached" => []});
 
@@ -35,7 +35,7 @@ signal_setup_changed();
 # DETACHER RELATED JUNK
 #########################################################
 sub determine_detacher {
-    my $type = (Irssi::settings_get_str("detached_type"));
+    my $type = (Irssi::settings_get_str("detacher_type"));
 
     if ($type eq "screen") {
         return setup_screen();
@@ -143,17 +143,17 @@ sub stop_timeout {
 sub start_timeout {
     stop_timeout();
 
-    my $secs = Irssi::settings_get_int("detached_check_interval");
+    my $secs = Irssi::settings_get_int("detacher_check_interval");
     if ($secs < 1) {
-        Irssi::print("WARNING: Detached check interval out of bounds, set to 5 seconds");
-        Irssi::settings_set_int("detached_check_interval", 5);
+        Irssi::print("WARNING: Detacher check interval out of bounds, set to 5 seconds");
+        Irssi::settings_set_int("detacher_check_interval", 5);
     }
 
-    my $msecs = Irssi::settings_get_int("detached_check_interval") * 1000;
-    $timeout = Irssi::timeout_add($msecs, \&detached_timeout, undef);
+    my $msecs = Irssi::settings_get_int("detacher_check_interval") * 1000;
+    $timeout = Irssi::timeout_add($msecs, \&detacher_timeout, undef);
 }
 
-sub detached_timeout {
+sub detacher_timeout {
     my $ret = $detacher_check->();
     if ($ret != $state) {
         if ($ret) {
@@ -181,7 +181,7 @@ sub signal_setup_changed {
 
     $detacher_check = determine_detacher();
     if ($detacher_check) {
-        detached_timeout();
+        detacher_timeout();
         start_timeout();
     }
 }
