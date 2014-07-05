@@ -40,6 +40,16 @@ sub pushover_enabled {
     return Irssi::settings_get_bool("pushover");
 }
 
+sub should_send_pushover {
+    my ($chatnet) = @_;
+
+    return unless pushover_enabled;
+    return unless $detached;
+    return if defined $proxies{$chatnet};
+
+    return 1;
+}
+
 #########################################################
 # PUSHOVER SERVICE
 #########################################################
@@ -67,7 +77,7 @@ sub check_pushover_validity {
     return $ret->{"_rc"} eq "200";
 }
 
-sub send_pushover_notification {
+sub send_pushover {
     my ($title, $msg, $priority) = @_;
 
     my %req = (
@@ -96,6 +106,12 @@ sub send_pushover_notification {
     return 1;
 }
 
+sub enqueue_pushover {
+    my ($title, $msg, $priority) = @_;
+
+    send_pushover($title, $msg, $priority);
+}
+
 #########################################################
 # SIGNALS
 #########################################################
@@ -107,23 +123,19 @@ sub signal_print_text {
     my $server = $dest->{"server"};
     return unless defined $server;
 
-    return unless pushover_enabled;
-    return unless $detached;
-    return if defined $proxies{$server->{"chatnet"}};
+    return unless should_send_pushover($server->{"chatnet"});
 
     if ($dest->{'level'} & Irssi::MSGLEVEL_HILIGHT) {
-        send_pushover_notification("Hilighted in $server->{'chatnet'}/$dest->{'target'}", $stripped);
+        enqueue_pushover("Hilighted in $server->{'chatnet'}/$dest->{'target'}", $stripped);
     }
 }
 
 sub signal_message_private {
     my ($server, $msg, $nick, $address) = @_;
 
-    return unless pushover_enabled;
-    return unless $detached;
-    return if defined $proxies{$server->{"chatnet"}};
+    return unless should_send_pushover($server->{"chatnet"});
 
-    send_pushover_notification("PM from $nick", "$nick on $server->{'chatnet'} said '$msg'");
+    enqueue_pushover("PM from $nick", "$nick on $server->{'chatnet'} said '$msg'");
 }
 
 sub signal_proxy_client_connected {
@@ -191,7 +203,7 @@ Irssi::command_bind("help", sub {
 sub pushover_on {
     my $ret = check_pushover_validity();
     if (!$ret) {
-        Irssi::print("WARNING: Pushover settings didn't validate, disabling notifications");
+        Irssi::print("WARNING: Pushover settings didn't validate, disabling");
         return;
     }
 
