@@ -1,3 +1,17 @@
+# This script provides detach / attach events for a terminal detacher.
+#
+# To use it, register for 'detacher detached' and 'detacher attached'.
+# For example:
+#
+#   Irssi::signal_add("detacher attached", \&sub_to_handle_attaching);
+#
+# The detach check interval is set by "detacher_check_interval" and
+# defaults to five seconds. It can be set in one second increments.
+#
+# Whether you're using screen / tmux / dtach should be autodetected.
+# If it isn't, set "detacher_type" to "screen" / "tmux" / "dtach" and
+# it will attempt to use that type.
+
 use strict;
 use vars qw($VERSION %IRSSI);
 
