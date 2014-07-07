@@ -18,6 +18,7 @@ Irssi::settings_add_str ("pushover", "pushover_user_key", "");
 Irssi::settings_add_str ("pushover", "pushover_user_device", "");
 
 Irssi::settings_add_int ("pushover", "pushover_timeout", 15);
+Irssi::settings_add_int ("pushover", "pushover_max_messages", 3);
 
 Irssi::command_bind("pushover on",       \&pushover_on,       "Pushover");
 Irssi::command_bind("pushover off",      \&pushover_off,      "Pushover");
@@ -32,11 +33,17 @@ Irssi::signal_add("proxy client disconnected", \&signal_proxy_client_disconnecte
 Irssi::signal_add("detacher attached",         \&signal_detacher_attached);
 Irssi::signal_add("detacher detached",         \&signal_detacher_detached);
 
+Irssi::signal_add("gui key pressed",      \&reset_messages);
+Irssi::signal_add("message own_public",   \&reset_messages);
+Irssi::signal_add("message own_private",  \&reset_messages);
+Irssi::signal_add("message own_nick",     \&reset_messages);
+
 #########################################################
 # VARIOUS UTILITY THINGS
 #########################################################
 my %proxies = ();
 my $detached = 1;
+my $sent_messages = 0;
 
 sub pushover_enabled {
     return Irssi::settings_get_bool("pushover");
@@ -45,11 +52,16 @@ sub pushover_enabled {
 sub should_send_pushover {
     my ($chatnet) = @_;
 
+    return unless $sent_messages < Irssi::settings_get_int("pushover_max_messages");
     return unless pushover_enabled;
     return unless $detached;
     return if defined $proxies{$chatnet};
 
     return 1;
+}
+
+sub reset_messages {
+    $sent_messages = 0;
 }
 
 #########################################################
@@ -107,6 +119,8 @@ sub send_pushover {
         Irssi::print("Failed to make Pushover request! '" . $ret->{"_content"} . "'");
         return 0;
     }
+
+    $sent_messages++;
 
     return 1;
 }
@@ -202,6 +216,7 @@ sub signal_detacher_attached {
 
 sub signal_detacher_detached {
     $detached = 1;
+    reset_messages;
 }
 
 #########################################################
