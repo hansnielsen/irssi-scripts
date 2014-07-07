@@ -17,6 +17,8 @@ Irssi::settings_add_str ("pushover", "pushover_api_key", "");
 Irssi::settings_add_str ("pushover", "pushover_user_key", "");
 Irssi::settings_add_str ("pushover", "pushover_user_device", "");
 
+Irssi::settings_add_int ("pushover", "pushover_timeout", 15);
+
 Irssi::command_bind("pushover on",       \&pushover_on,       "Pushover");
 Irssi::command_bind("pushover off",      \&pushover_off,      "Pushover");
 Irssi::command_bind("pushover validate", \&pushover_validate, "Pushover");
@@ -53,6 +55,9 @@ sub should_send_pushover {
 #########################################################
 # PUSHOVER SERVICE
 #########################################################
+my @queued = ();
+my $queue_timeout;
+
 my $ua = LWP::UserAgent->new();
 $ua->agent("pushover-irssi/$VERSION");
 $ua->env_proxy();
@@ -106,10 +111,38 @@ sub send_pushover {
     return 1;
 }
 
+sub send_queued_pushovers {
+    my $events = scalar @queued;
+
+    if ($events == 0) {
+        Irssi::timeout_remove($queue_timeout);
+        $queue_timeout = undef;
+        return;
+    } elsif ($events == 1) {
+        send_pushover(@{shift @queued});
+        return;
+    }
+
+    my @titles;
+    foreach my $notification (@queued) {
+        push @titles, $notification->[0];
+    }
+    send_pushover("$events new IRC events", join("\n", @titles));
+
+    @queued = ();
+}
+
 sub enqueue_pushover {
     my ($title, $msg, $priority) = @_;
 
-    send_pushover($title, $msg, $priority);
+    if ($queue_timeout) {
+        push @queued, [$title, $msg, $priority];
+    } else {
+        send_pushover($title, $msg, $priority);
+
+        my $t = Irssi::settings_get_int("pushover_timeout") * 1000;
+        $queue_timeout = Irssi::timeout_add($t, \&send_queued_pushovers, undef);
+    }
 }
 
 #########################################################
