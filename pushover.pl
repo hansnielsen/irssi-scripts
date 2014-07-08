@@ -284,3 +284,11 @@ sub pushover_off {
     Irssi::print("Pushover disabled");
     disable_pushover;
 }
+
+#########################################################
+# THE THING THAT RUNS AT STARTUP
+#########################################################
+signal_setup_changed;
+if ($enabled) {
+    Irssi::print("Pushover enabled");
+}
