@@ -251,7 +251,7 @@ Irssi::command_bind("help", sub {
 sub pushover_on {
     my $ret = check_pushover_validity();
     if (!$ret) {
-        Irssi::print("WARNING: Pushover settings didn't validate, disabling");
+        Irssi::active_win()->print("WARNING: Pushover settings didn't validate, disabling");
         return;
     }
 
