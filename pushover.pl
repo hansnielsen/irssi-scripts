@@ -79,6 +79,7 @@ my @queued = ();
 my $queue_timeout;
 my $api_key;
 my $user_key;
+my $user_device;
 
 my $ua = LWP::UserAgent->new();
 $ua->agent("pushover-irssi/$VERSION");
@@ -91,15 +92,15 @@ my $validate_url = "https://api.pushover.net/1/users/validate.json";
 sub check_pushover_validity {
     $api_key = Irssi::settings_get_str("pushover_api_key");
     $user_key = Irssi::settings_get_str("pushover_user_key");
+    $user_device = Irssi::settings_get_str("pushover_user_device");
 
     my %req = (
         "token"   => $api_key,
         "user"    => $user_key,
     );
 
-    my $device = Irssi::settings_get_str("pushover_user_device");
-    if (defined $device and length $device) {
-        $req{"device"} = $device;
+    if (defined $user_device and length $user_device) {
+        $req{"device"} = $user_device;
     }
 
     my $ret = $ua->post($validate_url, \%req);
@@ -250,6 +251,7 @@ sub signal_setup_changed {
 
     if ($api_key ne Irssi::settings_get_str("pushover_api_key")
       || $user_key ne Irssi::settings_get_str("pushover_user_key")
+      || $user_device ne Irssi::settings_get_str("pushover_user_device")
       || !$enabled) {
         return if !check_pushover_validity();
     }
