@@ -23,6 +23,7 @@ Irssi::settings_add_int ("pushover", "pushover_max_messages", 5);
 Irssi::command_bind("pushover on",       \&pushover_on,       "Pushover");
 Irssi::command_bind("pushover off",      \&pushover_off,      "Pushover");
 Irssi::command_bind("pushover",          \&subcmd_handler,    "Pushover");
+Irssi::command_bind("help",              \&help_pushover);
 
 Irssi::signal_add("print text",      \&signal_print_text);
 Irssi::signal_add("message private", \&signal_message_private);
@@ -295,6 +296,52 @@ sub pushover_off {
 
     Irssi::print("Pushover disabled");
     disable_pushover;
+}
+
+sub help_pushover {
+    my ($data, $server, $item) = @_;
+
+    return unless $data =~ /^\s*pushover\s*$/si;
+
+    my $help = <<EOF;
+Provides Pushover notifications for PMs and hilights.
+
+To use it, you must have signed up for Pushover:
+  https://pushover.net
+Set your user key (replacing 8lHNrC... with your own):
+
+    /SET pushover_user_key 8lHNrC...
+
+Register a new application to get an API key:
+  https://pushover.net/apps/build
+Any name (such as "irssi") is fine.
+Set the API key (replacing vRjlFg... with your own):
+
+    /SET pushover_api_key vRjlFg...
+
+Once those two keys are set up, enable Pushover. If your
+settings aren't valid, you'll be alerted to that. If you
+don't get a warning, then everything is good to go.
+
+    /SET pushover on
+
+To turn it off:
+
+    /SET pushover off
+
+To send notifications only to a specific device:
+
+    /SET pushover_user_device foo
+
+By default, a maximum of five messages with at least ten
+seconds between them will be sent. To change that:
+
+    /SET pushover_max_messages 7
+    /SET pushover_timeout 15
+EOF
+
+    Irssi::print($help);
+    Irssi::signal_stop;
 }
 
 #########################################################
