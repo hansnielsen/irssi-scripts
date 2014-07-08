@@ -8,3 +8,7 @@ All scripts are licensed under the Simplified BSD license; see LICENSE.
 ## detacher.pl
 
 Lets you know when a screen / tmux / dtach session is attached or detached.
+
+## pushover.pl
+
+Provides notifications of PMs / hilights via the Pushover service. Works with detacher.pl.
