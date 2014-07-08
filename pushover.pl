@@ -1,3 +1,14 @@
+# Provides Pushover notifications for PMs and hilights.
+#
+# Requires the ability to make HTTPS requests with LWP.
+#   On Debian / Ubuntu:
+#     $ sudo apt-get install libio-socket-ssl-perl
+#   On other systems with CPAN, either command should work:
+#     $ sudo cpan -i IO::Socket::SSL
+#     $ sudo cpan -i Crypt::SSLeay
+#
+# Works with detacher.pl if it is currently loaded.
+
 use strict;
 use vars qw($VERSION %IRSSI);
 use LWP::UserAgent;
