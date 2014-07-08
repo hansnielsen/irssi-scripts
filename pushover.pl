@@ -97,6 +97,10 @@ sub check_pushover_validity {
 sub send_pushover {
     my ($title, $msg, $priority) = @_;
 
+    if ($sent_messages == Irssi::settings_get_int("pushover_max_messages") - 1) {
+        $title = "Final notification: " . $title;
+    }
+
     my %req = (
         "token"   => Irssi::settings_get_str("pushover_api_key"),
         "user"    => Irssi::settings_get_str("pushover_user_key"),
