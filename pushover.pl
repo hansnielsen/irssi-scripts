@@ -22,7 +22,6 @@ Irssi::settings_add_int ("pushover", "pushover_max_messages", 3);
 
 Irssi::command_bind("pushover on",       \&pushover_on,       "Pushover");
 Irssi::command_bind("pushover off",      \&pushover_off,      "Pushover");
-Irssi::command_bind("pushover validate", \&pushover_validate, "Pushover");
 Irssi::command_bind("pushover",          \&subcmd_handler,    "Pushover");
 
 Irssi::signal_add("print text",      \&signal_print_text);
@@ -38,22 +37,21 @@ Irssi::signal_add("message own_public",   \&reset_messages);
 Irssi::signal_add("message own_private",  \&reset_messages);
 Irssi::signal_add("message own_nick",     \&reset_messages);
 
+Irssi::signal_add("setup changed", \&signal_setup_changed);
+
 #########################################################
 # VARIOUS UTILITY THINGS
 #########################################################
 my %proxies = ();
 my $detached = 1;
 my $sent_messages = 0;
-
-sub pushover_enabled {
-    return Irssi::settings_get_bool("pushover");
-}
+my $enabled = 0;
 
 sub should_send_pushover {
     my ($chatnet) = @_;
 
     return unless $sent_messages < Irssi::settings_get_int("pushover_max_messages");
-    return unless pushover_enabled;
+    return unless $enabled;
     return unless $detached;
     return if defined $proxies{$chatnet};
 
@@ -64,11 +62,23 @@ sub reset_messages {
     $sent_messages = 0;
 }
 
+sub disable_pushover {
+    $enabled = 0;
+    Irssi::settings_set_bool("pushover", 0);
+}
+
+sub enable_pushover {
+    $enabled = 1;
+    Irssi::settings_set_bool("pushover", 1);
+}
+
 #########################################################
 # PUSHOVER SERVICE
 #########################################################
 my @queued = ();
 my $queue_timeout;
+my $api_key;
+my $user_key;
 
 my $ua = LWP::UserAgent->new();
 $ua->agent("pushover-irssi/$VERSION");
@@ -79,9 +89,12 @@ my $message_url  = "https://api.pushover.net/1/messages.json";
 my $validate_url = "https://api.pushover.net/1/users/validate.json";
 
 sub check_pushover_validity {
+    $api_key = Irssi::settings_get_str("pushover_api_key");
+    $user_key = Irssi::settings_get_str("pushover_user_key");
+
     my %req = (
-        "token"   => Irssi::settings_get_str("pushover_api_key"),
-        "user"    => Irssi::settings_get_str("pushover_user_key"),
+        "token"   => $api_key,
+        "user"    => $user_key,
     );
 
     my $device = Irssi::settings_get_str("pushover_user_device");
@@ -90,8 +103,14 @@ sub check_pushover_validity {
     }
 
     my $ret = $ua->post($validate_url, \%req);
+    my $valid = $ret->{"_rc"} eq "200";
 
-    return $ret->{"_rc"} eq "200";
+    if (!$valid) {
+        Irssi::active_win()->print("WARNING: Pushover settings didn't validate, disabling");
+        disable_pushover;
+    }
+
+    return $valid;
 }
 
 sub send_pushover {
@@ -102,8 +121,8 @@ sub send_pushover {
     }
 
     my %req = (
-        "token"   => Irssi::settings_get_str("pushover_api_key"),
-        "user"    => Irssi::settings_get_str("pushover_user_key"),
+        "token"   => $api_key,
+        "user"    => $user_key,
         "title"   => $title,
         "message" => $msg,
     );
@@ -223,6 +242,21 @@ sub signal_detacher_detached {
     reset_messages;
 }
 
+sub signal_setup_changed {
+    if (!Irssi::settings_get_bool("pushover")) {
+        disable_pushover;
+        return;
+    }
+
+    if ($api_key ne Irssi::settings_get_str("pushover_api_key")
+      || $user_key ne Irssi::settings_get_str("pushover_user_key")
+      || !$enabled) {
+        return if !check_pushover_validity();
+    }
+
+    enable_pushover;
+}
+
 #########################################################
 # COMMANDS
 #########################################################
@@ -233,37 +267,22 @@ sub subcmd_handler {
     Irssi::command_runsub("pushover", $data, $server, $item);
 }
 
-sub pushover_validate {
-    my $ret = check_pushover_validity();
-    if ($ret) {
-        Irssi::print("Pushover settings validated!");
-    } else {
-        Irssi::print("Pushover settings failed to validate!");
-    }
-}
-
-Irssi::command_bind("help", sub {
-    if ($_[0] eq "pushover validate") {
-        Irssi::print("", Irssi::MSGLEVEL_CLIENTCRAP);
-        Irssi::print("PUSHOVER VALIDATE", Irssi::MSGLEVEL_CLIENTCRAP);
-        Irssi::print("", Irssi::MSGLEVEL_CLIENTCRAP);
-        Irssi::print("Tests the app API key, user ID, and user device against the Pushover server to make sure it is configured properly.", Irssi::MSGLEVEL_CLIENTCRAP);
-        Irssi::signal_stop();
-    }
-});
-
 sub pushover_on {
+    return if $enabled;
+
     my $ret = check_pushover_validity();
     if (!$ret) {
         Irssi::active_win()->print("WARNING: Pushover settings didn't validate, disabling");
         return;
     }
 
-    Irssi::print("Pushover enabled") unless pushover_enabled;
-    Irssi::settings_set_bool("pushover", 1);
+    Irssi::print("Pushover enabled");
+    enable_pushover;
 }
 
 sub pushover_off {
-    Irssi::print("Pushover disabled") unless !pushover_enabled;
-    Irssi::settings_set_bool("pushover", 0);
+    return if !$enabled;
+
+    Irssi::print("Pushover disabled");
+    disable_pushover;
 }
