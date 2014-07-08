@@ -17,8 +17,8 @@ Irssi::settings_add_str ("pushover", "pushover_api_key", "");
 Irssi::settings_add_str ("pushover", "pushover_user_key", "");
 Irssi::settings_add_str ("pushover", "pushover_user_device", "");
 
-Irssi::settings_add_int ("pushover", "pushover_timeout", 15);
-Irssi::settings_add_int ("pushover", "pushover_max_messages", 3);
+Irssi::settings_add_int ("pushover", "pushover_timeout", 10);
+Irssi::settings_add_int ("pushover", "pushover_max_messages", 5);
 
 Irssi::command_bind("pushover on",       \&pushover_on,       "Pushover");
 Irssi::command_bind("pushover off",      \&pushover_off,      "Pushover");
@@ -244,6 +244,13 @@ sub signal_detacher_detached {
 }
 
 sub signal_setup_changed {
+    if (Irssi::settings_get_int("pushover_timeout") < 1) {
+        Irssi::settings_set_int("pushover_timeout", 10);
+    }
+    if (Irssi::settings_get_int("pushover_max_messages") < 1) {
+        Irssi::settings_set_int("pushover_max_messages", 5);
+    }
+
     if (!Irssi::settings_get_bool("pushover")) {
         disable_pushover;
         return;
