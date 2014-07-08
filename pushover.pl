@@ -266,7 +266,12 @@ sub signal_setup_changed {
 sub subcmd_handler {
     my ($data, $server, $item) = @_;
     $data =~ s/\s+$//g;
-    Irssi::command_runsub("pushover", $data, $server, $item);
+
+    if ($data eq "") {
+        Irssi::print("Pushover notifications are currently " . ($enabled ? "on" : "off"));
+    } else {
+        Irssi::command_runsub("pushover", $data, $server, $item);
+    }
 }
 
 sub pushover_on {
