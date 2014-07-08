@@ -272,11 +272,7 @@ sub subcmd_handler {
 sub pushover_on {
     return if $enabled;
 
-    my $ret = check_pushover_validity();
-    if (!$ret) {
-        Irssi::active_win()->print("WARNING: Pushover settings didn't validate, disabling");
-        return;
-    }
+    return unless check_pushover_validity();
 
     Irssi::print("Pushover enabled");
     enable_pushover;
