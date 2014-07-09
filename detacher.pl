@@ -11,6 +11,8 @@
 # Whether you're using screen / tmux / dtach should be autodetected.
 # If it isn't, set "detacher_type" to "screen" / "tmux" / "dtach" and
 # it will attempt to use that type.
+#
+# If you are using dtach, you need to have the `lsof` utility installed.
 
 use strict;
 use vars qw($VERSION %IRSSI);

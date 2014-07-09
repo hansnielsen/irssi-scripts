@@ -3,6 +3,8 @@
 This is a collection of irssi scripts that I have written.
 Individual scripts have more documentation in the script itself.
 
+For information on how to use scripts in irssi, see [http://scripts.irssi.org/](the irssi scripts page).
+
 All scripts are licensed under the Simplified BSD license; see LICENSE.
 
 ## detacher.pl
