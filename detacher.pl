@@ -91,6 +91,10 @@ sub check_exec_socket {
 sub setup_screen {
     # gross, but only consistent way to get sockdir
     `screen -ls` =~ /^\d+ Sockets? in (\S+)\.$/m;
+    if ($? != 0) {
+        Irssi::print("WARNING: something went wrong in screen socket detection");
+        return undef;
+    }
     my $socketpath = catfile($1, $ENV{"STY"});
     if (! -p $socketpath) {
         Irssi::print("WARNING: Screen socket doesn't exist or isn't a socket!");
@@ -115,11 +119,19 @@ sub setup_dtach {
     my $ret;
     do {
         my $processname = `lsof -F c -U -a -p $pid`;
+        if ($? != 0) {
+            Irssi::print("WARNING: dtach detection broke (is lsof installed?)");
+            return undef;
+        }
         if ($processname =~ /^cdtach$/m) {
             return curry(\&check_dtach, $pid);
         }
 
         $ret = `lsof -F R -p $pid` =~ /^R(?<pid>.+)$/m;
+        if ($? != 0) {
+            Irssi::print("WARNING: dtach detection broke (is lsof installed?)");
+            return undef;
+        }
         $pid = $+{pid};
     } while ($ret);
 
@@ -131,6 +143,11 @@ sub check_dtach {
     my ($dtach_pid) = @_;
 
     my $sockets = `lsof -F n -U -a -p $dtach_pid`;
+    if ($? != 0) {
+        Irssi::print("WARNING: dtach check broke (is lsof installed?)");
+        stop_timeout();
+        return 0;
+    }
 
     my $count = 0;
     while ($sockets =~ /^n.+$/gm) {
