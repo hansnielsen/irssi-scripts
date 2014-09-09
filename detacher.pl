@@ -37,6 +37,7 @@ Irssi::settings_add_str("misc", "detacher_type", "");
 Irssi::signal_register({"detacher attached" => [], "detacher detached" => []});
 
 Irssi::signal_add("setup changed", \&signal_setup_changed);
+Irssi::signal_add("gui key pressed", \&signal_gui_key_pressed);
 
 my $timeout;
 my $detacher_check;
@@ -216,5 +217,13 @@ sub signal_setup_changed {
     if ($detacher_check) {
         detacher_timeout();
         start_timeout();
+    }
+}
+
+sub signal_gui_key_pressed {
+    # when detached, set back to attached if a key was pressed
+    if (!$state) {
+        $state = 1;
+        Irssi::signal_emit("detacher attached");
     }
 }
