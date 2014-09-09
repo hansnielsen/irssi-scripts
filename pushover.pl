@@ -2,7 +2,7 @@
 #
 # Requires the ability to make HTTPS requests with LWP.
 #   On Debian / Ubuntu:
-#     $ sudo apt-get install libio-socket-ssl-perl
+#     $ sudo apt-get install libwww-perl libio-socket-ssl-perl
 #   On other systems with CPAN, either command should work:
 #     $ sudo cpan -i IO::Socket::SSL
 #     $ sudo cpan -i Crypt::SSLeay
